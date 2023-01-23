@@ -5,7 +5,6 @@ class PlaylistsHandler {
   constructor(service, validator) {
     this._service = service;
     this._validator = validator;
-    // this.validatorAddSong = validatorAddSong;
 
     autoBind(this);
   }
@@ -89,6 +88,15 @@ async getPlaylistHandler(request, h) {
       status: 'success',
       message: 'Playlists berhasil dihapus',
     };
+}
+async getActivitiesHandler(request, h) {
+  const { id } = request.params;
+  const { id: credentialId } = request.auth.credentials;
+
+  const res = await this._service.getActivitiesById(id, credentialId);
+  const result = { status: 'success', data: res }
+
+  return result
 }
 }
 module.exports = PlaylistsHandler;

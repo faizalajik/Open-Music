@@ -2,6 +2,7 @@ const { Pool } = require('pg');
 const { nanoid } = require('nanoid');
 const { mapPlaylistDBToModel } = require('../../utils/playlistModel');
 const { mapMusicDBToModel } = require('../../utils/musicModel');
+const { mapActivitiesBToModel } = require('../../utils/activitiesModel');
 const NotFoundError = require('../../exceptions/NotFoundError');
 const InvariantError = require('../../exceptions/InvariantError');
 const AuthorizationError = require('../../exceptions/AuthorizationError');
@@ -54,10 +55,19 @@ class PlaylistsService {
       values: [id,playlistId,songId],
     };
 
+    const activitiesId = nanoid(16);
+    const createdAt = new Date().toISOString();
+    const queryAct = {
+    text: 'INSERT INTO playlist_song_activities VALUES($1, $2, $3, $4,$5,$6) RETURNING id',
+    values: [activitiesId,playlistId,songId,owner,'add',createdAt],
+    }
+
     const result = await this._pool.query(query);
 
     if (!result.rows[0].id) {
       throw new InvariantError('Lagu gagal ditambahkan ke playlist');
+    }else{
+      await this._pool.query(queryAct);
     }
 
     return result.rows[0].id;
@@ -148,20 +158,6 @@ class PlaylistsService {
     return res;
   }
 
-  async editPlaylistsById(id, { name, year }) {
-    const updatedAt = new Date().toISOString();
-    const query = {
-      text: 'UPDATE playlists SET name = $1, year = $2, updated_at = $3 WHERE id = $4 RETURNING id',
-      values: [name, year, updatedAt, id],
-    };
-
-    const result = await this._pool.query(query);
-
-    if (!result.rows.length) {
-      throw new NotFoundError('Gagal memperbarui Playlists. Id tidak ditemukan');
-    }
-  }
-
   async deleteSongPlaylistsById(id, songId, owner) {
     await this.verifyPlaylistAccess(id,owner)
 
@@ -174,24 +170,65 @@ class PlaylistsService {
 
     if (!result.rows.length) {
       throw new NotFoundError('Lagu gagal dihapus dari playlist. Id tidak ditemukan');
+    }else{
+      const activitiesId = nanoid(16);
+      const createdAt = new Date().toISOString();
+      const queryAct = {
+        text: 'INSERT INTO playlist_song_activities VALUES($1, $2, $3, $4,$5,$6) RETURNING id',
+        values: [activitiesId,id,songId,owner,'delete',createdAt],
+        }
+      await this._pool.query(queryAct);
     }
   }
   async deletePlaylistsById(id, owner) {
     await this.verifyPlaylistAccess(id,owner)
 
     await this._pool.query('DELETE FROM playlist_songs WHERE playlist_id = $1 RETURNING id',[id]);
-
-    const query = {
-      text: 'DELETE FROM playlists WHERE id = $1 RETURNING id',
-      values: [id],
-    };
-
-    const result = await this._pool.query(query);
+    await this._pool.query('DELETE FROM playlist_song_activities WHERE playlist_id = $1 RETURNING id',[id]);
+    const result = await this._pool.query('DELETE FROM playlists WHERE id = $1 RETURNING id',[id]);
 
     if (!result.rows.length) {
       throw new NotFoundError('Playlist gagal dihapus. Id tidak ditemukan');
     }
   }
+
+  async getActivitiesById(id,owner) {
+    await this.verifyPlaylistAccess(id,owner)
+
+    const queryAct = {
+      text: `SELECT
+      playlist_song_activities.playlist_id, 
+      users.username, 
+      song.title, 
+      playlist_song_activities."action", 
+      playlist_song_activities."time"
+    FROM
+      playlist_song_activities
+      INNER JOIN
+      song
+      ON 
+        playlist_song_activities.song_id = song."id"
+      INNER JOIN
+      users
+      ON 
+        playlist_song_activities.user_id = users."id"
+    WHERE
+      playlist_song_activities.playlist_id =  $1`,
+      values: [id],
+    };
+    const resultAct = await this._pool.query(queryAct);
+    if (!resultAct.rows.length) {
+      throw new NotFoundError('Aktivitas tidak ditemukan');
+    }
+
+    const res = {
+      "playlistId" : resultAct.rows[0].playlist_id,
+      "activities":  resultAct.rows.map(mapActivitiesBToModel)
+    };
+
+    return res;
+  }
+
 }
 
 module.exports = PlaylistsService;
