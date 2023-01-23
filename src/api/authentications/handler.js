@@ -13,7 +13,7 @@ class AuthenticationsHandler {
   }
  
   async postAuthHandler(request, h) {
-    try {
+
       this._validator.validatePostAuthenticationPayload(request.payload);
  
       const { username, password } = request.payload;
@@ -34,29 +34,9 @@ class AuthenticationsHandler {
       });
       response.code(201);
       return response;
-    } catch (error) {
-      if (error instanceof ClientError) {
-        const response = h.response({
-          status: 'fail',
-          message: error.message,
-        });
-        response.code(error.statusCode);
-        return response;
-      }
- 
-      // Server ERROR!
-      const response = h.response({
-        status: 'error',
-        message: 'Maaf, terjadi kegagalan pada server kami.',
-      });
-      response.code(500);
-      console.error(error);
-      return response;
-    }
   }
  
   async putAuthHandler(request, h) {
-    try {
       this._validator.validatePutAuthenticationPayload(request.payload);
  
       const { refreshToken } = request.payload;
@@ -71,29 +51,9 @@ class AuthenticationsHandler {
           accessToken,
         },
       };
-    } catch (error) {
-      if (error instanceof ClientError) {
-        const response = h.response({
-          status: 'fail',
-          message: error.message,
-        });
-        response.code(error.statusCode);
-        return response;
-      }
- 
-      // Server ERROR!
-      const response = h.response({
-        status: 'error',
-        message: 'Maaf, terjadi kegagalan pada server kami.',
-      });
-      response.code(500);
-      console.error(error);
-      return response;
-    }
   }
  
   async deleteAuthHandler(request, h) {
-    try {
       this._validator.validateDeleteAuthenticationPayload(request.payload);
  
       const { refreshToken } = request.payload;
@@ -104,25 +64,6 @@ class AuthenticationsHandler {
         status: 'success',
         message: 'Refresh token berhasil dihapus',
       };
-    } catch (error) {
-      if (error instanceof ClientError) {
-        const response = h.response({
-          status: 'fail',
-          message: error.message,
-        });
-        response.code(error.statusCode);
-        return response;
-      }
- 
-      // Server ERROR!
-      const response = h.response({
-        status: 'error',
-        message: 'Maaf, terjadi kegagalan pada server kami.',
-      });
-      response.code(500);
-      console.error(error);
-      return response;
-    }
   }
 }
  

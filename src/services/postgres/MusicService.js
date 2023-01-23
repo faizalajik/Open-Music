@@ -81,7 +81,7 @@ class MusicService {
     const result = await this._pool.query(query);
 
     if (!result.rows.length) {
-      throw new NotFoundError('Misic gagal dihapus. Id tidak ditemukan');
+      throw new NotFoundError('Music gagal dihapus. Id tidak ditemukan');
     }
   }
 }

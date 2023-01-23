@@ -5,28 +5,30 @@ class PlaylistsHandler {
   constructor(service, validator) {
     this._service = service;
     this._validator = validator;
+    // this.validatorAddSong = validatorAddSong;
 
     autoBind(this);
   }
   async postPlaylistSongHandler(request, h) {
     const { id } = request.params;
-    console.log(id)
     const { id: credentialId } = request.auth.credentials;
-        this._validator.validatePlaylistSongPayload(request.payload);
+    this._validator[1].validatePlaylistSongPayload(request.payload);
 
-        const {songId} = request.payload;
-        await this._service.addSongToPlaylists(id,songId)
-        const response = h.response({
-            status: 'success',
-            message: 'Lagu berhasil ditambahkan'
-          });
+    const {songId} = request.payload;
+    await this._service.addSongToPlaylists(id,songId,credentialId)
+    const response = h.response({
+        status: 'success',
+        message: 'Lagu berhasil ditambahkan'
+      });
+      response.code(201);
+      return response;
 }
 
   async postPlaylistHandler(request, h) {
 
         const { id: credentialId } = request.auth.credentials;
 
-        this._validator.validatePlaylistPayload(request.payload);
+        this._validator[0].validatePlaylistPayload(request.payload);
 
         const {name} = request.payload;
         const playlistId = await this._service.addPlaylists({ name, owner:credentialId })
@@ -56,97 +58,37 @@ async getPlaylistHandler(request, h) {
 }
 
   async getPlaylistByIdHandler(request, h) {
-    try {
       const { id } = request.params;
-      const song = await this._service.getPlaylistsById(id);
-      return {
-        status: 'success',
-        data: {
-          song,
-        },
-      };
-    } catch (error) {
-      if (error instanceof ClientError) {
-        const response = h.response({
-          status: 'fail',
-          message: error.message,
-        });
-        response.code(error.statusCode);
-        return response;
-      }
+      const { id: credentialId } = request.auth.credentials;
+      const res = await this._service.getPlaylistsById(id, credentialId);
+      const result = { status: 'success', data: res }
 
-      // Server ERROR!
-      const response = h.response({
-        status: 'error',
-        message: 'Maaf, terjadi kegagalan pada server kami.',
-      });
-      response.code(500);
-      console.error(error);
-      return response;
-    }
+      return result
   }
 
-  async putPlaylistByIdHandler(request, h) {
-    try {
-      this._validator.validatePlaylistsPayload(request.payload);
-      const { title, year, performer, genre, duration, albumId } = request.payload;
+  async deleteSongPlaylistByIdHandler(request, h) {
       const { id } = request.params;
+      const { id: credentialId } = request.auth.credentials;
+      this._validator[1].validatePlaylistSongPayload(request.payload);
 
-      await this._service.editPlaylistsById(id, { title, year, performer, genre, duration, albumId });
+      const {songId} = request.payload;
+      await this._service.deleteSongPlaylistsById(id,songId,credentialId);
 
       return {
         status: 'success',
-        message: 'Playlists berhasil diperbarui',
+        message: 'Lagu di playlists berhasil dihapus',
       };
-    } catch (error) {
-      if (error instanceof ClientError) {
-        const response = h.response({
-          status: 'fail',
-          message: error.message,
-        });
-        response.code(error.statusCode);
-        return response;
-      }
-
-      // Server ERROR!
-      const response = h.response({
-        status: 'error',
-        message: 'Maaf, terjadi kegagalan pada server kami.',
-      });
-      response.code(500);
-      console.error(error);
-      return response;
-    }
   }
-
   async deletePlaylistByIdHandler(request, h) {
-    try {
-      const { id } = request.params;
-      await this._service.deletePlaylistsById(id);
+    const { id } = request.params;
+    const { id: credentialId } = request.auth.credentials;
 
-      return {
-        status: 'success',
-        message: 'Playlists berhasil dihapus',
-      };
-    } catch (error) {
-      if (error instanceof ClientError) {
-        const response = h.response({
-          status: 'fail',
-          message: error.message,
-        });
-        response.code(error.statusCode);
-        return response;
-      }
+    await this._service.deletePlaylistsById(id,credentialId);
 
-      // Server ERROR!
-      const response = h.response({
-        status: 'error',
-        message: 'Maaf, terjadi kegagalan pada server kami.',
-      });
-      response.code(500);
-      console.error(error);
-      return response;
-    }
-  }
+    return {
+      status: 'success',
+      message: 'Playlists berhasil dihapus',
+    };
+}
 }
 module.exports = PlaylistsHandler;

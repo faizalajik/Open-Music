@@ -32,9 +32,9 @@ const routes = (handler) => [
         },
     },
     {
-      method: 'PUT',
-      path: '/playlists/{id}',
-      handler: handler.putPlaylistByIdHandler,
+      method: 'DELETE',
+      path: '/playlists/{id}/songs',
+      handler: handler.deleteSongPlaylistByIdHandler,
       options: {
         auth: 'openmusic_jwt',
       },
