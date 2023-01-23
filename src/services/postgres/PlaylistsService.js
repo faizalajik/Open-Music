@@ -45,7 +45,7 @@ class PlaylistsService {
   async addSongToPlaylists(playlistId,songId,owner) {
     await this.verifyPlaylistAccess(playlistId,owner)
 
-    const resultSong = await this._pool.query("SELECT * FROM song WHERE id = $1",[songId]);
+    const resultSong = await this._pool.query("SELECT * FROM songs WHERE id = $1",[songId]);
     if (!resultSong.rows.length) {
       throw new NotFoundError('Lagu tidak ditemukan');
     }else{
@@ -119,9 +119,9 @@ class PlaylistsService {
       text: `SELECT
       playlists."id" as playlistid, 
       playlists."name", 
-      song."id", 
-      song.title, 
-      song.performer, 
+      songs."id", 
+      songs.title, 
+      songs.performer, 
       users.username
     FROM
       playlists
@@ -130,9 +130,9 @@ class PlaylistsService {
       ON 
         playlists."id" = playlist_songs.playlist_id
       INNER JOIN
-      song
+      songs
       ON 
-        playlist_songs.song_id = song."id"
+        playlist_songs.song_id = songs."id"
       INNER JOIN
       users
       ON 
@@ -199,15 +199,15 @@ class PlaylistsService {
       text: `SELECT
       playlist_song_activities.playlist_id, 
       users.username, 
-      song.title, 
+      songs.title, 
       playlist_song_activities."action", 
       playlist_song_activities."time"
     FROM
       playlist_song_activities
       INNER JOIN
-      song
+      songs
       ON 
-        playlist_song_activities.song_id = song."id"
+        playlist_song_activities.song_id = songs."id"
       INNER JOIN
       users
       ON 

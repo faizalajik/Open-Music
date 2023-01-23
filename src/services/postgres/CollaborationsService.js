@@ -15,14 +15,14 @@ class CollaborationsService {
     const id = nanoid(16);
 
     const query = {
-      text: 'INSERT INTO playlists VALUES($1, $2, $3) RETURNING id',
-      values: [id, name, owner],
+      text: 'INSERT INTO col VALUES($1, $2, $3) RETURNING id',
+      values: [id, playlistId, userId],
     };
 
     const result = await this._pool.query(query);
 
     if (!result.rows[0].id) {
-      throw new InvariantError('Playlist gagal ditambahkan');
+      throw new InvariantError('Collaboration gagal ditambahkan');
     }
 
     return result.rows[0].id;

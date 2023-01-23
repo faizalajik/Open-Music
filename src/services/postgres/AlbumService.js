@@ -15,7 +15,7 @@ class AlbumService {
     const updatedAt = createdAt;
 
     const query = {
-      text: 'INSERT INTO album VALUES($1, $2, $3, $4, $5) RETURNING id',
+      text: 'INSERT INTO albums VALUES($1, $2, $3, $4, $5) RETURNING id',
       values: [id, name, year, createdAt, updatedAt],
     };
 
@@ -30,17 +30,17 @@ class AlbumService {
 
   async getAlbumById(id) {
     const query = {
-      text: 'SELECT * FROM album WHERE id = $1',
+      text: 'SELECT * FROM albums WHERE id = $1',
       values: [id],
     };
     const result = await this._pool.query(query);
     const queryMusic = {
-      text: 'SELECT id,title,performer FROM song WHERE "albumId" = $1',
+      text: 'SELECT id,title,performer FROM songs WHERE "albumId" = $1',
       values: [id],
     };
     const resultMusic = await this._pool.query(queryMusic);
     if (!result.rows.length) {
-      throw new NotFoundError('Album tidak ditemukan');
+      throw new NotFoundError('albums tidak ditemukan');
     }
     const res = {
       "album": {
@@ -57,7 +57,7 @@ class AlbumService {
   async editAlbumById(id, { name, year }) {
     const updatedAt = new Date().toISOString();
     const query = {
-      text: 'UPDATE album SET name = $1, year = $2, updated_at = $3 WHERE id = $4 RETURNING id',
+      text: 'UPDATE albums SET name = $1, year = $2, updated_at = $3 WHERE id = $4 RETURNING id',
       values: [name, year, updatedAt, id],
     };
 
@@ -70,7 +70,7 @@ class AlbumService {
 
   async deleteAlbumById(id) {
     const query = {
-      text: 'DELETE FROM album WHERE id = $1 RETURNING id',
+      text: 'DELETE FROM albums WHERE id = $1 RETURNING id',
       values: [id],
     };
 

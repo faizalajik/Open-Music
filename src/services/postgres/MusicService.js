@@ -15,7 +15,7 @@ class MusicService {
     const updatedAt = createdAt;
 
     const query = {
-      text: 'INSERT INTO song VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id',
+      text: 'INSERT INTO songs VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id',
       values: [id, title, year, performer, genre, duration, albumId, createdAt, updatedAt],
     };
 
@@ -32,16 +32,16 @@ class MusicService {
     var result = '';
 
     if (title != '' && performer != '') {
-      result = await this._pool.query("SELECT id, title, performer FROM song where (lower(title) LIKE '%'||$1||'%' AND lower(performer) LIKE '%'||$2||'%')", [title, performer]);
+      result = await this._pool.query("SELECT id, title, performer FROM songs where (lower(title) LIKE '%'||$1||'%' AND lower(performer) LIKE '%'||$2||'%')", [title, performer]);
     }
     else if (performer != '') {
-      result = await this._pool.query("SELECT id, title, performer FROM song where LOWER(performer) LIKE '%'||$1||'%'", [performer]);
+      result = await this._pool.query("SELECT id, title, performer FROM songs where LOWER(performer) LIKE '%'||$1||'%'", [performer]);
     }
     else if (title != '') {
-      result = await this._pool.query("SELECT id, title, performer FROM song where LOWER(title) LIKE '%'||$1||'%'", [title]);
+      result = await this._pool.query("SELECT id, title, performer FROM songs where LOWER(title) LIKE '%'||$1||'%'", [title]);
     }
     else {
-      result = await this._pool.query('SELECT id, title, performer FROM song');
+      result = await this._pool.query('SELECT id, title, performer FROM songs');
     }
 
     return result.rows.map(mapMusicDBToModel);
@@ -49,7 +49,7 @@ class MusicService {
 
   async getMusicById(id) {
 
-    const result = await this._pool.query('SELECT * FROM song WHERE id = $1', [id]);
+    const result = await this._pool.query('SELECT * FROM songs WHERE id = $1', [id]);
 
     if (!result.rows.length) {
       throw new NotFoundError('Music tidak ditemukan');
@@ -61,7 +61,7 @@ class MusicService {
   async editMusicById(id, { title, year, performer, genre, duration, albumId }) {
     const updatedAt = new Date().toISOString();
     const query = {
-      text: 'UPDATE song SET title = $1, year = $2, performer = $3, genre = $4, duration = $5, "albumId" = $6, updated_at = $7 WHERE id = $8 RETURNING id',
+      text: 'UPDATE songs SET title = $1, year = $2, performer = $3, genre = $4, duration = $5, "albumId" = $6, updated_at = $7 WHERE id = $8 RETURNING id',
       values: [title, year, performer, genre, duration, albumId, updatedAt, id],
     };
 
@@ -74,7 +74,7 @@ class MusicService {
 
   async deleteMusicById(id) {
     const query = {
-      text: 'DELETE FROM song WHERE id = $1 RETURNING id',
+      text: 'DELETE FROM songs WHERE id = $1 RETURNING id',
       values: [id],
     };
 
