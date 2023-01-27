@@ -8,8 +8,9 @@ const InvariantError = require('../../exceptions/InvariantError');
 const AuthorizationError = require('../../exceptions/AuthorizationError');
 
 class PlaylistsService {
-  constructor() {
+  constructor(collaborationService) {
     this._pool = new Pool();
+    this._collaborationService = collaborationService;
   }
 
   async verifyPlaylistAccess(playlistId, userId) {
@@ -93,7 +94,7 @@ class PlaylistsService {
 
   async getPlaylists(owner){
 
-    const result = await this._pool.query(`SELECT
+    var result = await this._pool.query(`SELECT
     playlists."id", 
     playlists."name", 
     users.username
@@ -103,12 +104,15 @@ class PlaylistsService {
     users
     ON 
       playlists."owner" = users."id"
+    LEFT JOIN
+    collaborations
+    ON 
+      playlists."id" = collaborations.playlist_id
   WHERE
-    playlists."owner" =  $1`,[owner]);
+    playlists."owner" = $1 OR
+    collaborations.user_id = $1
+    GROUP BY playlists."id",users.username`,[owner]);
 
-    if (!result.rows.length) {
-      throw new NotFoundError('Playlists tidak ditemukan');
-    }
     return result.rows.map(mapPlaylistDBToModel)
   }
 
@@ -181,11 +185,14 @@ class PlaylistsService {
     }
   }
   async deletePlaylistsById(id, owner) {
+
     await this.verifyPlaylistAccess(id,owner)
+    await this.verifyPlaylistOwner(id,owner)
 
     await this._pool.query('DELETE FROM playlist_songs WHERE playlist_id = $1 RETURNING id',[id]);
     await this._pool.query('DELETE FROM playlist_song_activities WHERE playlist_id = $1 RETURNING id',[id]);
     const result = await this._pool.query('DELETE FROM playlists WHERE id = $1 RETURNING id',[id]);
+    console.log('test : ',123)
 
     if (!result.rows.length) {
       throw new NotFoundError('Playlist gagal dihapus. Id tidak ditemukan');

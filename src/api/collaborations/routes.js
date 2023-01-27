@@ -2,12 +2,18 @@ const routes = (handler) => [
     {
         method: 'POST',
         path: '/collaborations',
-        handler: handler.postcollaborationsHandler,
+        handler: handler.postCollaborationsHandler,
+        options: {
+          auth: 'openmusic_jwt',
+        },
       },
       {
         method: 'DELETE',
         path: '/collaborations',
-        handler: handler.deletecollaborationsHandler,
+        handler: handler.deleteCollaborationByIdHandler,
+        options: {
+          auth: 'openmusic_jwt',
+        },
       },
   ];
    

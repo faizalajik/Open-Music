@@ -3,7 +3,7 @@ const ClientError = require('./exceptions/ClientError');
 const AlbumService = require('./services/postgres/AlbumService.js');
 const MusicService = require('./services/postgres/MusicService.js');
 const PlaylistService = require('./services/postgres/PlaylistsService.js');
-const { AlbumValidator, MusicValidator, PlaylistValidator, PlaylistSongValidator } = require('./validator');
+const { AlbumValidator, MusicValidator, PlaylistValidator,CollaborationValidator, PlaylistSongValidator } = require('./validator');
 const Jwt = require('@hapi/jwt');
 const Hapi = require('@hapi/hapi');
 const album = require('./api/album');
@@ -19,11 +19,15 @@ const AuthenticationsService = require('./services/postgres/AuthenticationsServi
 const TokenManager = require('./tokenize/TokenManager');
 const AuthenticationsValidator = require('./validator/authentications');
 
+const collaborations = require('./api/collaborations');
+const CollaborationsService = require('./services/postgres/CollaborationsService');
+
 
 const init = async () => {
   const albumService = new AlbumService();
   const musicService = new MusicService();
-  const playlistService = new PlaylistService();
+  const collaborationsService = new CollaborationsService();
+  const playlistService = new PlaylistService(collaborationsService);
   const usersService = new UsersService();
   const authenticationsService = new AuthenticationsService();
 
@@ -96,7 +100,15 @@ const init = async () => {
         service: playlistService,
         validator: [PlaylistValidator,PlaylistSongValidator]
       },
-    }
+    },
+    {
+      plugin: collaborations,
+      options: {
+        service : collaborationsService,
+        playlistsService : playlistService,
+        validator: CollaborationValidator
+      },
+    },
   ]);
 
   server.ext('onPreResponse', (request, h) => {

@@ -12,6 +12,10 @@ const PlaylistSongPayloadSchema = Joi.object({
     playlistId: Joi.string(),
     songId: Joi.string().required()
 });
+const CollaborationPayloadSchema = Joi.object({
+    playlistId: Joi.string(),
+    userId: Joi.string()
+});
 const MusicPayloadSchema = Joi.object({
     title: Joi.string().required(),
     year: Joi.number().required(),
@@ -21,4 +25,10 @@ const MusicPayloadSchema = Joi.object({
     albumId: Joi.string(),
 });
 
-module.exports = { AlbumPayloadSchema, MusicPayloadSchema, PlaylistPayloadSchema, PlaylistSongPayloadSchema };
+module.exports = { 
+     AlbumPayloadSchema,
+     MusicPayloadSchema,
+     CollaborationPayloadSchema, 
+     PlaylistPayloadSchema, 
+     PlaylistSongPayloadSchema 
+    };
