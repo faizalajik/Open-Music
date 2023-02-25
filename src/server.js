@@ -3,9 +3,11 @@ const ClientError = require('./exceptions/ClientError');
 const AlbumService = require('./services/postgres/AlbumService.js');
 const MusicService = require('./services/postgres/MusicService.js');
 const PlaylistService = require('./services/postgres/PlaylistsService.js');
-const { AlbumValidator, MusicValidator, PlaylistValidator,CollaborationValidator, PlaylistSongValidator } = require('./validator');
+const { AlbumValidator, MusicValidator, PlaylistValidator, CollaborationValidator, PlaylistSongValidator } = require('./validator');
 const Jwt = require('@hapi/jwt');
 const Hapi = require('@hapi/hapi');
+const path = require('path');
+const Inert = require('@hapi/inert');
 const album = require('./api/album');
 const music = require('./api/music');
 const playlist = require('./api/playlist');
@@ -22,6 +24,14 @@ const AuthenticationsValidator = require('./validator/authentications');
 const collaborations = require('./api/collaborations');
 const CollaborationsService = require('./services/postgres/CollaborationsService');
 
+const _exports = require('./api/exports');
+const ProducerService = require('./services/rabbitmq/ProducerService');
+const ExportsValidator = require('./validator/exports');
+
+const uploads = require('./api/uploads');
+const StorageService = require('./services/storage/StorageService');
+const UploadsValidator = require('./validator/uploads');
+
 
 const init = async () => {
   const albumService = new AlbumService();
@@ -30,6 +40,8 @@ const init = async () => {
   const playlistService = new PlaylistService(collaborationsService);
   const usersService = new UsersService();
   const authenticationsService = new AuthenticationsService();
+  const storageService = new StorageService(path.resolve(__dirname, 'api/uploads/file/images'));
+
 
   const server = Hapi.server({
     port: process.env.PORT,
@@ -44,6 +56,9 @@ const init = async () => {
   await server.register([
     {
       plugin: Jwt,
+    },
+    {
+      plugin: Inert,
     },
   ]);
 
@@ -98,15 +113,30 @@ const init = async () => {
       plugin: playlist,
       options: {
         service: playlistService,
-        validator: [PlaylistValidator,PlaylistSongValidator]
+        validator: [PlaylistValidator, PlaylistSongValidator]
       },
     },
     {
       plugin: collaborations,
       options: {
-        service : collaborationsService,
-        playlistsService : playlistService,
+        service: collaborationsService,
+        playlistsService: playlistService,
         validator: CollaborationValidator
+      },
+    },
+    {
+      plugin: _exports,
+      options: {
+        service: ProducerService,
+        validator: ExportsValidator,
+      },
+    },
+    {
+      plugin: uploads,
+      options: {
+        service: storageService,
+        albumsService: albumService,
+        validator: UploadsValidator,
       },
     },
   ]);
@@ -115,7 +145,7 @@ const init = async () => {
     // mendapatkan konteks response dari request
     const { response } = request;
     if (response instanceof Error) {
- 
+
       // penanganan client error secara internal.
       if (response instanceof ClientError) {
         const newResponse = h.response({

@@ -1,11 +1,7 @@
 const { Pool } = require('pg');
 const { nanoid } = require('nanoid');
-const { mapPlaylistDBToModel } = require('../../utils/playlistModel');
-const { mapMusicDBToModel } = require('../../utils/musicModel');
-const { mapActivitiesBToModel } = require('../../utils/activitiesModel');
 const NotFoundError = require('../../exceptions/NotFoundError');
 const InvariantError = require('../../exceptions/InvariantError');
-const AuthorizationError = require('../../exceptions/AuthorizationError');
 
 class CollaborationsService {
   constructor() {
@@ -17,51 +13,46 @@ class CollaborationsService {
       text: 'SELECT * FROM collaborations WHERE playlist_id = $1 AND user_id = $2',
       values: [playlist_id, userId],
     };
- 
+
     const result = await this._pool.query(query);
- 
+
     if (!result.rows.length) {
       throw new InvariantError('Kolaborasi gagal diverifikasi');
     }
   }
 
-  async addCollaborator(playlistId,userId) {
+  async addCollaborator(playlistId, userId) {
 
-    const resultUser = await this._pool.query('SELECT * FROM users WHERE id = $1',[userId]);
-    
+    const resultUser = await this._pool.query('SELECT * FROM users WHERE id = $1', [userId]);
+
     if (!resultUser.rows.length) {
       throw new NotFoundError('User tidak ditemukan');
-    }else{
+    } else {
       const id = nanoid(16);
-      console.log('res : ',id)
-  
       const query = {
         text: 'INSERT INTO collaborations VALUES($1, $2, $3) RETURNING id',
         values: [id, playlistId, userId],
       };
-  
+
       const result = await this._pool.query(query);
-      console.log('res : ',result)
 
       if (!result.rows.length) {
         throw new InvariantError('Collaboration gagal ditambahkan');
       }
-  
+
       return result.rows[0].id;
     }
-    
+
   }
 
   async deleteCollaboration(playlistId, userId) {
-    console.log(333)
-
     const query = {
       text: 'DELETE FROM collaborations WHERE playlist_id = $1 AND user_id = $2 RETURNING id',
       values: [playlistId, userId],
     };
- 
+
     const result = await this._pool.query(query);
- 
+
     if (!result.rows.length) {
       throw new InvariantError('Kolaborasi gagal dihapus');
     }
